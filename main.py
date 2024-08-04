@@ -224,7 +224,7 @@ def fetch_portfolio_technical_insights(symbols):
 def fetch_dividend_history(symbol):
     div_his = {}
     years_param = int(request.args.get('years', 10))
-    start_date = datetime.now() - timedelta(days=365 * years_param)
+    start_date = str(datetime.now().year - years_param) + '-01-01'
     div_his_data = yq_dividend_history(symbol, start_date)
     for line in div_his_data.to_csv().split()[1:]:
         _, div_date, div_rate = line.split(',')
@@ -299,5 +299,12 @@ if __name__ == '__main__':
     # data = yq_technical_insights(symbols)
     # data = yq_corporate_events(symbols) # returns pandas.DataFrame
     # print(data)
-
+    
+    div_his = {}
+    start_date = str(datetime.now().year - 5) + '-01-01'
+    print(start_date)
+    div_his_data = yq_dividend_history('O', start_date)
+    for line in div_his_data.to_csv().split()[1:]:
+        _, div_date, div_rate = line.split(',')
+        div_his[div_date] = div_rate
     app.run(debug=True)
