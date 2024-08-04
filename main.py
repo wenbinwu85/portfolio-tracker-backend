@@ -300,11 +300,11 @@ if __name__ == '__main__':
     # data = yq_corporate_events(symbols) # returns pandas.DataFrame
     # print(data)
     
-    div_his = {}
-    start_date = str(datetime.now().year - 5) + '-01-01'
-    print(start_date)
-    div_his_data = yq_dividend_history('O', start_date)
-    for line in div_his_data.to_csv().split()[1:]:
-        _, div_date, div_rate = line.split(',')
-        div_his[div_date] = div_rate
+    # div_his = {}
+    # start_date = str(datetime.now().year - 5) + '-01-01'
+    # print(start_date)
+    # div_his_data = yq_dividend_history('O', start_date)
+    # for line in div_his_data.to_csv().split()[1:]:
+    #     _, div_date, div_rate = line.split(',')
+    #     div_his[div_date] = div_rate
     app.run(debug=True)
