@@ -223,8 +223,9 @@ def fetch_portfolio_technical_insights(symbols):
 @app.route('/fetch/dividend-history/<symbol>')
 def fetch_dividend_history(symbol):
     div_his = {}
-    years_param = int(request.args.get('years', 10))
-    start_date = str(datetime.now().year - years_param) + '-01-01'
+    thisYear = datetime.now().year;
+    year = int(request.args.get('years', 10))
+    start_date = str(thisYear - year) + '-01-01'
     div_his_data = yq_dividend_history(symbol, start_date)
     for line in div_his_data.to_csv().split()[1:]:
         _, div_date, div_rate = line.split(',')
@@ -252,45 +253,14 @@ def fetch_corporate_events(symbol):
             events[symbol].append(event)
     return jsonify(events)
 
-# http://127.0.0.1:5000/alpaca/fetch/news/?start=2024-01-01&end=2024-02-01&limit=50&symbols=AMD,CVS
-# @app.route('/alpaca/fetch/news/')
-# def alpaca_get_news():
-#     args = request.args.to_dict()
-#     symbols = args['symbols'].replace(',', '%2C%20')
-#     # start_date = args['start'].replace(':', '%3A')
-#     # end_date = args['end'].replace(':', '%3A')
-#     params = f'?start={args['start']}&end={args['end']}&sort=desc&symbols={symbols}&limit={args['limit']}&include_content=true'
-#     news_api_url = alpaca_api_base_url + "/news" + params
-
-#     headers = {
-# 		"accept": "application/json",
-# 		"APCA-API-KEY-ID": ALPACA_API_KEY,
-# 		"APCA-API-SECRET-KEY": ALPACA_SECRET_KEY
-# 	}
-
-
-#     # print(symbols)
-#     # print(params)
-#     # print(news_api_url)
-
-#     # return jsonify({'hello': 'world'})
-	
-#     response = requests.get(news_api_url, headers=headers)
-#     if (response.status_code == 200):
-#         return jsonify(response.text)
-#     else:
-#         res = eval(response.text)
-#         res['code'] = response.status_code
-#         return jsonify(res)
-
 
 if __name__ == '__main__':
-    # symbol = 'sbux'
-    # data = fetch_stock_data(symbol)
-    # data = yq_dividend_history(symbol, start_date='05-20-2020') # returns pandas.DataFrame
-    # data = yq_technical_insights(symbol)
-    # data = yq_corporate_events(symbol) # returns pandas.DataFrame
-    # print(data)
+#   symbol = 'pfe'
+#   data = fetch_stock_data(symbol)
+#   data = yq_dividend_history(symbol, start_date='05-20-2020') # returns pandas.DataFrame
+#   data = yq_technical_insights(symbol)
+#   data = yq_corporate_events(symbol) # returns pandas.DataFrame
+#   print(data)
 
     # symbols = ['T', 'vz']
     # data = fetch_stock_data(symbols)
@@ -300,11 +270,17 @@ if __name__ == '__main__':
     # data = yq_corporate_events(symbols) # returns pandas.DataFrame
     # print(data)
     
-    # div_his = {}
-    # start_date = str(datetime.now().year - 5) + '-01-01'
-    # print(start_date)
-    # div_his_data = yq_dividend_history('O', start_date)
-    # for line in div_his_data.to_csv().split()[1:]:
-    #     _, div_date, div_rate = line.split(',')
-    #     div_his[div_date] = div_rate
+#   div_his = {}
+#   year = int(request.args.get('year', datetime.now().year))
+#   start_date = str(2024) + '-01-01'
+#   div_his_data = yq_dividend_history('DVN', start_date)
+#   for line in div_his_data.to_csv().split()[1:]:
+#       _, div_date, div_rate = line.split(',')
+#       div_his[div_date] = div_rate
+#   print(div_his)
+    
+#   symbol = 'pfe'
+#   data = fetch_stock_data(symbol)
+#   print(data)
+    
     app.run(debug=True)
