@@ -120,6 +120,7 @@ def map_modules_data(yq_modules_data):
             try:
                 mapped_symbol_data['freeCashflowPerShare'] = mapped_symbol_data['freeCashflow']['raw'] / mapped_symbol_data['sharesOutstanding']['raw']
                 mapped_symbol_data['freeCashflowYield'] = mapped_symbol_data['freeCashflow']['raw'] / mapped_symbol_data['marketCap']['raw']
+                mapped_symbol_data['enterpriseToFreeCashflow'] = round(mapped_symbol_data['enterpriseValue']['raw'] / mapped_symbol_data['freeCashflow']['raw'], 2)
                 if mapped_symbol_data['freeCashflowPerShare'] != 0:
                     mapped_symbol_data['freeCashflowPayoutRatio'] = mapped_symbol_data['dividendRate']['raw'] / mapped_symbol_data['freeCashflowPerShare']
                 else:
@@ -127,6 +128,7 @@ def map_modules_data(yq_modules_data):
             except KeyError:
                 mapped_symbol_data['freeCashflowPerShare'] = 0
                 mapped_symbol_data['freeCashflowYield'] = 0
+                mapped_symbol_data['enterpriseToFreeCashflow'] = 0
                 mapped_symbol_data['freeCashflowPayoutRatio'] = 0
         else:
             mapped_symbol_data['profile'] = data['assetProfile']
@@ -255,12 +257,12 @@ def fetch_corporate_events(symbol):
 
 
 if __name__ == '__main__':
-#   symbol = 'pfe'
-#   data = fetch_stock_data(symbol)
-#   data = yq_dividend_history(symbol, start_date='05-20-2020') # returns pandas.DataFrame
-#   data = yq_technical_insights(symbol)
-#   data = yq_corporate_events(symbol) # returns pandas.DataFrame
-#   print(data)
+    # symbol = 'pfe'
+    # data = fetch_stock_data(symbol)
+    # data = yq_dividend_history(symbol, start_date='05-20-2020') # returns pandas.DataFrame
+    # data = yq_technical_insights(symbol)
+    # data = yq_corporate_events(symbol) # returns pandas.DataFrame
+    # print(data)
 
     # symbols = ['T', 'vz']
     # data = fetch_stock_data(symbols)
@@ -270,17 +272,17 @@ if __name__ == '__main__':
     # data = yq_corporate_events(symbols) # returns pandas.DataFrame
     # print(data)
     
-#   div_his = {}
-#   year = int(request.args.get('year', datetime.now().year))
-#   start_date = str(2024) + '-01-01'
-#   div_his_data = yq_dividend_history('DVN', start_date)
-#   for line in div_his_data.to_csv().split()[1:]:
-#       _, div_date, div_rate = line.split(',')
-#       div_his[div_date] = div_rate
-#   print(div_his)
-    
-#   symbol = 'pfe'
-#   data = fetch_stock_data(symbol)
-#   print(data)
+    # div_his = {}
+    # year = int(request.args.get('year', datetime.now().year))
+    # start_date = str(2024) + '-01-01'
+    # div_his_data = yq_dividend_history('DVN', start_date)
+    # for line in div_his_data.to_csv().split()[1:]:
+    #     _, div_date, div_rate = line.split(',')
+    #     div_his[div_date] = div_rate
+    # print(div_his)
+        
+    # symbol = 'pfe'
+    # data = fetch_stock_data(symbol)
+    # print(data)
     
     app.run(debug=True)
