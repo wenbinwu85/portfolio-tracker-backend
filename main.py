@@ -1,20 +1,18 @@
-import requests
+import warnings
 from typing import Dict
-from datetime import datetime, timedelta
+from datetime import datetime
 from yahooquery import Ticker
 from quart import Quart, jsonify, request
 from quart_cors import cors
 
-ALPACA_API_KEY = 'PK3OKOYQHL2RVL2DZ2UC'
-ALPACA_SECRET_KEY = 'I5LdfklL2g6shWULe4XMkXdeMlUQ7cNvHQBJBwTD'
-alpaca_api_base_url = 'https://data.alpaca.markets/v1beta1'
-
-import warnings
 warnings.filterwarnings("ignore")
 
 app = Quart(__name__)
 app = cors(app)
 
+# ALPACA_API_KEY = 'PK3OKOYQHL2RVL2DZ2UC'
+# ALPACA_SECRET_KEY = 'I5LdfklL2g6shWULe4XMkXdeMlUQ7cNvHQBJBwTD'
+# alpaca_api_base_url = 'https://data.alpaca.markets/v1beta1'
 
 """
 --------- Yahooquery ----------
@@ -95,52 +93,70 @@ def get_module_data(ticker: Ticker, attribute: str, *args, **kwargs) -> Dict:
 
 
 def map_modules_data(yq_modules_data):
-    mapped_yq_data = {}
-    for symbol, data in yq_modules_data.items():
+    mapped_data = {}
+    for symbol, ticker_data in yq_modules_data.items():
         mapped_symbol_data = {}
-        mapped_symbol_data.update(data['price'])
-        mapped_symbol_data.update(data['summaryDetail'])
-        mapped_symbol_data.update(data['defaultKeyStatistics'])
-        if data['price']['quoteType'] == 'EQUITY':
-            mapped_symbol_data.update(data['financialData'])
-            mapped_symbol_data['profile'] = data['assetProfile']
-            mapped_symbol_data['calendarEvents'] = data['calendarEvents']
-            mapped_symbol_data['earnings'] = data['earnings']
-            mapped_symbol_data['earnings'].update(data['earningsHistory'])
-            mapped_symbol_data['earnings'].update(data['earningsTrend'])
-            mapped_symbol_data['indexTrend'] = data['indexTrend']
-            mapped_symbol_data['insiderTransactions'] = data.get('insiderTransactions', {}).get('transactions', {})
-            mapped_symbol_data['recommendationTrend'] = data['recommendationTrend']['trend']
+        mapped_symbol_data.update(ticker_data['price'])
+        mapped_symbol_data.update(ticker_data['summaryDetail'])
+        mapped_symbol_data.update(ticker_data['defaultKeyStatistics'])
+        mapped_symbol_data['profile'] = ticker_data['assetProfile']
+
+        quoteType = ticker_data['price']['quoteType']
+        ticker_price = ticker_data['price']['regularMarketPrice']['raw']
+
+        if quoteType == 'EQUITY':
+            mapped_symbol_data.update(ticker_data['financialData'])
+            mapped_symbol_data['calendarEvents'] = ticker_data['calendarEvents']
+            mapped_symbol_data['earnings'] = ticker_data['earnings']
+            mapped_symbol_data['earnings'].update(ticker_data['earningsHistory'])
+            mapped_symbol_data['earnings'].update(ticker_data['earningsTrend'])
+            mapped_symbol_data['indexTrend'] = ticker_data['indexTrend']
+            mapped_symbol_data['insiderTransactions'] = ticker_data.get('insiderTransactions', {}).get('transactions', {})
+            mapped_symbol_data['recommendationTrend'] = ticker_data['recommendationTrend']['trend']
             mapped_symbol_data['shareholders'] = {}
-            mapped_symbol_data['shareholders']['fundOwnership'] = data['fundOwnership']['ownershipList']
-            mapped_symbol_data['shareholders']['insiderHolders'] = data['insiderHolders']['holders']
-            mapped_symbol_data['shareholders']['institutionOwnership'] = data['institutionOwnership']['ownershipList']
-            mapped_symbol_data['shareholders']['majorHolders'] = data.get('majorHoldersBreakdown', {})
-            mapped_symbol_data['upgradeDowngradeHistory'] = data['upgradeDowngradeHistory']['history'][:10]
+            mapped_symbol_data['shareholders']['fundOwnership'] = ticker_data['fundOwnership']['ownershipList']
+            mapped_symbol_data['shareholders']['insiderHolders'] = ticker_data['insiderHolders']['holders']
+            mapped_symbol_data['shareholders']['institutionOwnership'] = ticker_data['institutionOwnership']['ownershipList']
+            mapped_symbol_data['shareholders']['majorHolders'] = ticker_data.get('majorHoldersBreakdown', {})
+            mapped_symbol_data['upgradeDowngradeHistory'] = ticker_data['upgradeDowngradeHistory']['history'][:10]
+
             try:
-                mapped_symbol_data['freeCashflowPerShare'] = mapped_symbol_data['freeCashflow']['raw'] / mapped_symbol_data['sharesOutstanding']['raw']
-                mapped_symbol_data['freeCashflowYield'] = mapped_symbol_data['freeCashflow']['raw'] / mapped_symbol_data['marketCap']['raw']
-                mapped_symbol_data['enterpriseToFreeCashflow'] = round(mapped_symbol_data['enterpriseValue']['raw'] / mapped_symbol_data['freeCashflow']['raw'], 2)
+                free_cashflow = mapped_symbol_data['freeCashflow']['raw']
+                free_cashflow_per_share = free_cashflow / mapped_symbol_data['sharesOutstanding']['raw']
+                mapped_symbol_data['freeCashflowPerShare'] = free_cashflow_per_share
+                mapped_symbol_data['freeCashflowYield'] = round(free_cashflow_per_share / ticker_price, 4)
                 if mapped_symbol_data['freeCashflowPerShare'] != 0:
-                    mapped_symbol_data['freeCashflowPayoutRatio'] = mapped_symbol_data['dividendRate']['raw'] / mapped_symbol_data['freeCashflowPerShare']
+                    mapped_symbol_data['freeCashflowPayoutRatio'] = mapped_symbol_data['dividendRate']['raw'] / free_cashflow_per_share
                 else:
                     mapped_symbol_data['freeCashflowPayoutRatio'] = 0
+                mapped_symbol_data['enterpriseValueToFreeCashflow'] = round(mapped_symbol_data['enterpriseValue']['raw'] / free_cashflow, 2)
             except KeyError:
                 mapped_symbol_data['freeCashflowPerShare'] = 0
                 mapped_symbol_data['freeCashflowYield'] = 0
-                mapped_symbol_data['enterpriseToFreeCashflow'] = 0
                 mapped_symbol_data['freeCashflowPayoutRatio'] = 0
+                mapped_symbol_data['enterpriseValueToFreeCashflow'] = 0
         else:
-            mapped_symbol_data['profile'] = data['assetProfile']
-            mapped_symbol_data['profile'].update(data['fundProfile'])
-            mapped_symbol_data['dividendRate'] = data['summaryDetail']['yield']['raw'] * data['price']['regularMarketPrice']['raw']
-            mapped_symbol_data['dividendYield'] = data['summaryDetail']['yield']['raw']
-            mapped_symbol_data['topHoldings'] = data['topHoldings']
-            mapped_symbol_data['fundPerformance'] = data['fundPerformance']
+            mapped_symbol_data['profile'].update(ticker_data['fundProfile'])
+            mapped_symbol_data['dividendRate'] = ticker_data['summaryDetail']['yield']['raw'] * ticker_price
+            mapped_symbol_data['dividendYield'] = ticker_data['summaryDetail']['yield']['raw']
+            mapped_symbol_data['topHoldings'] = ticker_data['topHoldings']
+            mapped_symbol_data['fundPerformance'] = ticker_data['fundPerformance']
         
-        del mapped_symbol_data['profile']['companyOfficers']
-        mapped_yq_data[symbol] = mapped_symbol_data
-    return mapped_yq_data
+        clean_up_mapped_symbol_data(mapped_symbol_data)
+        mapped_data[symbol] = mapped_symbol_data
+    return mapped_data
+
+
+def clean_up_mapped_symbol_data(mapped_symbol_data):
+    keys = [
+        'algorithm', 'ask', 'askSize', 'bid', 'bidSize', 
+        'category', 'circulatingSupply', 'coinMarketCapLink', 'expireDate', 'fromCurrency', 
+        'legalType', 'maxAge', 'priceHint', 'startDate', 'strikePrice',
+        'toCurrency', 'tradeable', 'underlyingSymbol'
+    ]
+    for key in keys:
+        del mapped_symbol_data[key]
+    del mapped_symbol_data['profile']['companyOfficers']
 
 
 def fetch_stock_data(symbols):
@@ -225,7 +241,7 @@ def fetch_portfolio_technical_insights(symbols):
 @app.route('/fetch/dividend-history/<symbol>')
 def fetch_dividend_history(symbol):
     div_his = {}
-    thisYear = datetime.now().year;
+    thisYear = datetime.now().year
     year = int(request.args.get('years', 10))
     start_date = str(thisYear - year) + '-01-01'
     div_his_data = yq_dividend_history(symbol, start_date)
@@ -259,8 +275,11 @@ def fetch_corporate_events(symbol):
 if __name__ == '__main__':
     # symbol = 'pfe'
     # data = fetch_stock_data(symbol)
+    # print(data)
     # data = yq_dividend_history(symbol, start_date='05-20-2020') # returns pandas.DataFrame
+    # print(data)
     # data = yq_technical_insights(symbol)
+    # print(data)
     # data = yq_corporate_events(symbol) # returns pandas.DataFrame
     # print(data)
 
@@ -280,9 +299,5 @@ if __name__ == '__main__':
     #     _, div_date, div_rate = line.split(',')
     #     div_his[div_date] = div_rate
     # print(div_his)
-        
-    # symbol = 'pfe'
-    # data = fetch_stock_data(symbol)
-    # print(data)
     
     app.run(debug=True)
