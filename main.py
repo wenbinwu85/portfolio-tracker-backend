@@ -1,4 +1,5 @@
 import warnings
+import json
 from typing import Dict
 from datetime import datetime
 from yahooquery import Ticker
@@ -154,8 +155,16 @@ def clean_up_mapped_symbol_data(mapped_symbol_data):
         'legalType', 'maxAge', 'priceHint', 'startDate', 'strikePrice',
         'toCurrency', 'tradeable', 'underlyingSymbol'
     ]
-    for key in keys:
-        del mapped_symbol_data[key]
+    for k, v in mapped_symbol_data.items():
+        if (isinstance(v, (dict, str)) and not len(v)):
+            keys.append(k)
+        if (v is None):
+            keys.append(k)
+    for key in set(keys):
+        try:
+            del mapped_symbol_data[key]
+        except:
+            print(f'failed to delete key {key}')
     del mapped_symbol_data['profile']['companyOfficers']
 
 
@@ -273,13 +282,18 @@ def fetch_corporate_events(symbol):
 
 
 if __name__ == '__main__':
-    # symbol = 'pfe'
+    # symbol = 'nke'
     # data = fetch_stock_data(symbol)
     # print(data)
-    # data = yq_dividend_history(symbol, start_date='05-20-2020') # returns pandas.DataFrame
-    # print(data)
+    # with open("ticker_data.json", "w") as file:
+    #     json.dump(data, file)
     # data = yq_technical_insights(symbol)
-    # print(data)
+    # with open("ticker_tech_insights_data.json", "w") as file:
+    #     json.dump(data, file)
+    # data = yq_dividend_history(symbol, start_date='05-20-2020') # returns pandas.DataFrame
+    # with open("ticker_dividends_data.json", "w") as file:
+    #     json.dump(data, file)
+
     # data = yq_corporate_events(symbol) # returns pandas.DataFrame
     # print(data)
 
