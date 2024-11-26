@@ -153,7 +153,8 @@ def clean_up_mapped_symbol_data(mapped_symbol_data):
         'algorithm', 'ask', 'askSize', 'bid', 'bidSize', 
         'category', 'circulatingSupply', 'coinMarketCapLink', 'expireDate', 'fromCurrency', 
         'legalType', 'maxAge', 'priceHint', 'startDate', 'strikePrice',
-        'toCurrency', 'tradeable', 'underlyingSymbol'
+        'toCurrency', 'tradeable', 'underlyingSymbol', 'lastFiscalYearEnd', 'nextFiscalYearEnd',
+        'postMarketSource', 'preMarketSource', 'quoteSourceName', 'regularMarketSource',
     ]
     for k, v in mapped_symbol_data.items():
         if (isinstance(v, (dict, str)) and not len(v)):
@@ -313,5 +314,9 @@ if __name__ == '__main__':
     #     _, div_date, div_rate = line.split(',')
     #     div_his[div_date] = div_rate
     # print(div_his)
+    
+    # ticker = init_ticker('AAPL', formatted=True, asynchronous=True)
+    # modules_data = get_module_data(ticker, 'get_modules', modules=['price', 'summaryDetail', 'defaultKeyStatistics', 'financialData'])
+    # print(modules_data)
     
     app.run(debug=True)
